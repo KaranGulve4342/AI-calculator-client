@@ -30,7 +30,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
+      '/calculate': {
         target: 'https://ai-calculator-server-taupe.vercel.app',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
