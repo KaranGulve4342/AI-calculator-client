@@ -29,7 +29,6 @@ export default function Home() {
     const [latexPosition, setLatexPosition] = useState({ x: 10, y: 200 });
     const [latexExpression, setLatexExpression] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState('');
 
     useEffect(() => {
         if (latexExpression && window.MathJax) {
@@ -134,7 +133,6 @@ export default function Home() {
 
     const runRoute = async () => {
         setLoading(true);
-        setErrorMsg('');
         const canvas = canvasRef.current;
         if (canvas) {
             try {
@@ -149,7 +147,6 @@ export default function Home() {
                 const resp = await response.data;
                 if (!resp.data || resp.data.length === 0) {
                     setLatexExpression(null);
-                    setErrorMsg('Oops! No answer found. Try drawing your math problem again!');
                     toast.error('Oops! No answer found. Try drawing your math problem a little clearer!', {
                         description: 'Make sure your math problem is visible and clear.',
                         duration: 2000,
@@ -195,7 +192,6 @@ export default function Home() {
                 });
             } catch (err) {
                 setLoading(false);
-                setErrorMsg('Something went wrong. Please try again!');
                 toast.error('Something went wrong. Please try again!', {
                     description: 'Check your internet connection or try a different problem.',
                     duration: 2000,
