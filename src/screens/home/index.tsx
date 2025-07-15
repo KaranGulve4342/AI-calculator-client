@@ -105,31 +105,55 @@ export default function Home() {
         }
     };
 
-    const getCanvasRelativeCoords = (e: TouchEvent | React.TouchEvent<HTMLCanvasElement>) => {
+    const getCanvasRelativeCoords = (
+        e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    ) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
+        
+        // Get the bounding rectangle of the canvas
         const rect = canvas.getBoundingClientRect();
-        const touch = e.touches[0] || e.changedTouches[0];
-        return {
-            x: touch.clientX - rect.left,
-            y: touch.clientY - rect.top,
-        };
+        
+        // Get canvas actual dimensions
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        
+        // Get canvas display dimensions
+        const displayWidth = rect.width;
+        const displayHeight = rect.height;
+        
+        // Calculate scale factors
+        const scaleX = canvasWidth / displayWidth;
+        const scaleY = canvasHeight / displayHeight;
+
+        let clientX: number, clientY: number;
+
+        if ('touches' in e) {
+            // Handle touch events
+            const touch = e.touches[0] || e.changedTouches[0];
+            clientX = touch.clientX;
+            clientY = touch.clientY;
+        } else {
+            // Handle mouse events
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        // Calculate coordinates relative to canvas, accounting for scale
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+
+        return { x, y };
     };
 
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const startDrawing = (
+        e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    ) => {
         const canvas = canvasRef.current;
         if (canvas) {
             canvas.style.background = 'black';
             const ctx = canvas.getContext('2d');
-            let x, y;
-            if ('touches' in e) {
-                const coords = getCanvasRelativeCoords(e);
-                x = coords.x;
-                y = coords.y;
-            } else {
-                x = e.nativeEvent.offsetX;
-                y = e.nativeEvent.offsetY;
-            }
+            const { x, y } = getCanvasRelativeCoords(e);
             if (ctx) {
                 ctx.beginPath();
                 ctx.moveTo(x, y);
@@ -137,21 +161,21 @@ export default function Home() {
             }
         }
     };
-    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+
+    const draw = (
+        e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    ) => {
         if (!isDrawing) return;
+        
+        // Prevent default touch behavior to avoid scrolling
+        if ('touches' in e) {
+            e.preventDefault();
+        }
+        
         const canvas = canvasRef.current;
         if (canvas) {
             const ctx = canvas.getContext('2d');
-            let x, y;
-            if ('touches' in e) {
-                e.preventDefault();
-                const coords = getCanvasRelativeCoords(e);
-                x = coords.x;
-                y = coords.y;
-            } else {
-                x = e.nativeEvent.offsetX;
-                y = e.nativeEvent.offsetY;
-            }
+            const { x, y } = getCanvasRelativeCoords(e);
             if (ctx) {
                 ctx.strokeStyle = color;
                 ctx.lineTo(x, y);
@@ -159,6 +183,7 @@ export default function Home() {
             }
         }
     };
+
     const stopDrawing = () => setIsDrawing(false);
 
     const runRoute = async () => {
