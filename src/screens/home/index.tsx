@@ -207,29 +207,34 @@ export default function Home() {
     return (
         <>
             <Toaster position="bottom-right" />
-            <div className="flex flex-col items-center min-h-screen bg-black pt-8">
-                {/* <h1 className="text-3xl font-bold text-white mb-2 text-center">AI Math Canvas</h1> */}
-                <p className="text-base text-gray-300 mb-6 text-center"><strong> AI Math Cavas </strong>- Draw your math problem, pick a color, and let AI solve it for you!</p>
-                <div className="flex flex-wrap gap-4 items-center justify-center mb-6">
+            <div className="flex flex-col items-center min-h-screen bg-black pt-4 px-2 sm:pt-8 sm:px-0">
+                {/* Responsive Section Header */}
+                <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-2 text-center leading-tight">
+                    AI Math Canvas
+                </h1>
+                <p className="text-xs sm:text-base md:text-lg text-gray-300 mb-4 sm:mb-6 text-center">
+                    <strong>AI Math Canvas</strong> - Draw your math problem, pick a color, and let AI solve it for you!
+                </p>
+                <div className="flex flex-wrap gap-2 sm:gap-4 items-center justify-center mb-4 sm:mb-6 w-full">
                     <Button
                         onClick={() => setReset(true)}
                         variant="destructive"
                         size="lg"
-                        className="flex items-center gap-2 px-6 py-2 rounded-lg bg-red-600 text-white font-semibold shadow hover:bg-red-700"
+                        className="flex items-center gap-2 px-3 py-2 sm:px-6 sm:py-2 rounded-lg bg-red-600 text-white font-semibold shadow hover:bg-red-700 text-xs sm:text-base"
                     >
                         <RefreshCw size={18} />
                         Reset
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2">
                         {SWATCHES.map((swatch) => (
                             <button
                                 key={swatch}
                                 onClick={() => setColor(swatch)}
-                                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${color === swatch ? 'border-yellow-400 scale-110 shadow' : 'border-gray-500'} `}
+                                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center transition-all ${color === swatch ? 'border-yellow-400 scale-110 shadow' : 'border-gray-500'} `}
                                 style={{ background: swatch }}
                                 aria-label={`Select color ${swatch}`}
                             >
-                                {color === swatch && <Paintbrush size={14} className="text-yellow-400" />}
+                                {color === swatch && <Paintbrush size={12} className="text-yellow-400" />}
                             </button>
                         ))}
                     </div>
@@ -237,29 +242,29 @@ export default function Home() {
                         onClick={runRoute}
                         variant="default"
                         size="lg"
-                        className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700"
+                        className="flex items-center gap-2 px-3 py-2 sm:px-6 sm:py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 text-xs sm:text-base"
                     >
                         <Play size={18} />
                         Run
                     </Button>
                 </div>
                 {loading && (
-                    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-90">
-                        <div className="flex flex-col items-center gap-6">
+                    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-90 px-4">
+                        <div className="flex flex-col items-center gap-4 sm:gap-6">
                             <div className="three-body">
                                 <div className="three-body__dot"></div>
                                 <div className="three-body__dot"></div>
                                 <div className="three-body__dot"></div>
                             </div>
-                            <div className="text-2xl font-bold text-indigo-400 drop-shadow mb-1">Solving your math magic...</div>
-                            <div className="text-lg text-white font-medium text-center px-4">
+                            <div className="text-lg sm:text-2xl font-bold text-indigo-400 drop-shadow mb-1 text-center">Solving your math magic...</div>
+                            <div className="text-base sm:text-lg text-white font-medium text-center px-2">
                                 Please wait while the AI thinks just for you.<br />
                                 <span className="text-indigo-400">Math is fun when you explore!</span>
                             </div>
                         </div>
                     </div>
                 )}
-                <div className="relative w-full flex-1 rounded-xl overflow-hidden shadow border border-gray-700 bg-black">
+                <div className="relative w-full flex-1 rounded-xl overflow-hidden shadow border border-gray-700 bg-black max-w-full sm:max-w-2xl mx-auto" style={{ minHeight: '40vh', height: '60vh' }}>
                     <canvas
                         ref={canvasRef}
                         id="canvas"
@@ -277,8 +282,8 @@ export default function Home() {
                             defaultPosition={latexPosition}
                             onStop={(_, data) => setLatexPosition({ x: data.x, y: data.y })}
                         >
-                            <div className="absolute p-4 bg-gray-800 bg-opacity-90 text-white rounded-lg shadow border border-gray-600">
-                                <div className="latex-content text-lg font-bold">{latexExpression}</div>
+                            <div className="absolute p-2 sm:p-4 bg-gray-800 bg-opacity-90 text-white rounded-lg shadow border border-gray-600 max-w-[90vw] sm:max-w-xs">
+                                <div className="latex-content text-base sm:text-lg font-bold">{latexExpression}</div>
                             </div>
                         </Draggable>
                     )}
