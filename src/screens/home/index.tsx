@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import Draggable from 'react-draggable';
 import { SWATCHES } from '@/constants';
 import { Paintbrush, RefreshCw, Play } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
@@ -11,11 +10,6 @@ interface GeneratedResult {
     answer: string;
 }
 
-interface Response {
-    expr: string;
-    result: string;
-    assign: boolean;
-}
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -26,7 +20,6 @@ export default function Home() {
     const [reset, setReset] = useState(false);
     const [dictOfVars, setDictOfVars] = useState({});
     const [result, setResult] = useState<GeneratedResult>();
-    const [latexPosition, setLatexPosition] = useState({ x: 10, y: 200 });
     const [latexExpression, setLatexExpression] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -84,8 +77,17 @@ export default function Home() {
     }, []);
 
     const renderLatexToCanvas = (expression: string, answer: string) => {
-        const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
-        setLatexExpression(latex); // Only one answer at a time
+        // For simple math expressions, use LaTeX
+        const isSimpleMath = answer.toString().length < 20 && !answer.toString().includes(' ');
+        
+        if (isSimpleMath) {
+            const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
+            setLatexExpression(latex);
+        } else {
+            // For complex answers, we'll display them in the UI below
+            setLatexExpression(null);
+        }
+        
         const canvas = canvasRef.current;
         if (canvas) {
             const ctx = canvas.getContext('2d');
@@ -200,6 +202,8 @@ export default function Home() {
                     }
                 });
                 const resp = await response.data;
+                
+                // Handle the new response structure
                 if (!resp.data || resp.data.length === 0) {
                     setLatexExpression(null);
                     toast.error('Oops! No answer found. Try drawing your math problem a little clearer!', {
@@ -211,24 +215,11 @@ export default function Home() {
                     setLoading(false);
                     return;
                 }
-                resp.data.forEach((data: Response) => {
-                    // Always set the result for display
-                    setTimeout(() => {
-                        setResult({
-                            expression: data.expr,
-                            answer: data.result
-                        });
-                        setLoading(false);
-                    }, 1000);
 
-                    // Only update dictOfVars if assign is true
-                    if (data.assign === true) {
-                        setDictOfVars({
-                            ...dictOfVars,
-                            [data.expr]: data.result
-                        });
-                    }
-                });
+                // Process the first result (taking the first item from the data array)
+                const firstResult = resp.data[0];
+                
+                // Calculate drawing bounds for positioning
                 const ctx = canvas.getContext('2d');
                 const imageData = ctx!.getImageData(0, 0, canvas.width, canvas.height);
                 let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
@@ -243,18 +234,24 @@ export default function Home() {
                         }
                     }
                 }
-                const centerX = (minX + maxX) / 2;
-                const centerY = (minY + maxY) / 2;
-                setLatexPosition({ x: centerX, y: centerY });
-                resp.data.forEach((data: Response) => {
-                    setTimeout(() => {
-                        setResult({
-                            expression: data.expr,
-                            answer: data.result
-                        });
-                        setLoading(false);
-                    }, 1000);
-                });
+            
+
+                // Set the result for display
+                setTimeout(() => {
+                    setResult({
+                        expression: firstResult.expr,
+                        answer: firstResult.result
+                    });
+                    setLoading(false);
+                }, 1000);
+
+                // Only update dictOfVars if assign is true
+                if (firstResult.assign === true) {
+                    setDictOfVars({
+                        ...dictOfVars,
+                        [firstResult.expr]: firstResult.result
+                    });
+                }
             } catch {
                 setLoading(false);
                 toast.error('Something went wrong. Please try again!', {
@@ -272,7 +269,7 @@ export default function Home() {
     return (
         <>
             <Toaster position="bottom-right" />
-            <div className="flex flex-col items-center min-h-screen bg-black pt-4 px-2 sm:pt-8 sm:px-0">
+            <div className="flex flex-col items-center min-h-screen bg-black pt-4 px-2 sm:pt-8 sm:px-0 pb-6">
                 {/* Responsive Section Header */}
                 <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-2 text-center leading-tight">
                     AI Math Canvas
@@ -347,17 +344,43 @@ export default function Home() {
                         onTouchEnd={stopDrawing}
                         onTouchCancel={stopDrawing}
                     />
-                    {latexExpression && (
+                    {/* {latexExpression && (
                         <Draggable
                             defaultPosition={latexPosition}
                             onStop={(_, data) => setLatexPosition({ x: data.x, y: data.y })}
                         >
-                            <div className="absolute p-2 sm:p-4 bg-gray-800 bg-opacity-90 text-white rounded-lg shadow border border-gray-600 max-w-[90vw] sm:max-w-xs">
-                                <div className="latex-content text-base sm:text-lg font-bold">{latexExpression}</div>
+                            <div className="absolute p-2 sm:p-4 bg-gray-800 bg-opacity-95 text-white rounded-lg shadow-lg border border-gray-600 max-w-[95vw] sm:max-w-md md:max-w-lg cursor-move">
+                                <div className="latex-content text-sm sm:text-base md:text-lg font-bold break-words">
+                                    {latexExpression}
+                                </div>
                             </div>
                         </Draggable>
-                    )}
+                    )} */}
                 </div>
+                
+                {/* Answer Display Section */}
+                {result && (
+                    <div className="w-full mt-4 p-4 bg-gray-900 rounded-xl border border-gray-700 shadow-lg max-w-4xl">
+                        <div className="mb-3">
+                            <h3 className="text-lg sm:text-xl font-bold text-indigo-400 mb-2 flex items-center gap-2">
+                                <span className="text-2xl">🧮</span>
+                                Problem:
+                            </h3>
+                            <p className="text-gray-200 text-sm sm:text-base leading-relaxed">
+                                {result.expression}
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="text-lg sm:text-xl font-bold text-green-400 mb-2 flex items-center gap-2">
+                                <span className="text-2xl">✅</span>
+                                Solution:
+                            </h3>
+                            <div className="text-gray-200 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
+                                {result.answer}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );
