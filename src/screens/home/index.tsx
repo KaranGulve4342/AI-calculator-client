@@ -105,26 +105,56 @@ export default function Home() {
         }
     };
 
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const getCanvasRelativeCoords = (e: TouchEvent | React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { x: 0, y: 0 };
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0] || e.changedTouches[0];
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top,
+        };
+    };
+
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (canvas) {
             canvas.style.background = 'black';
             const ctx = canvas.getContext('2d');
+            let x, y;
+            if ('touches' in e) {
+                const coords = getCanvasRelativeCoords(e);
+                x = coords.x;
+                y = coords.y;
+            } else {
+                x = e.nativeEvent.offsetX;
+                y = e.nativeEvent.offsetY;
+            }
             if (ctx) {
                 ctx.beginPath();
-                ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+                ctx.moveTo(x, y);
                 setIsDrawing(true);
             }
         }
     };
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
         const canvas = canvasRef.current;
         if (canvas) {
             const ctx = canvas.getContext('2d');
+            let x, y;
+            if ('touches' in e) {
+                e.preventDefault();
+                const coords = getCanvasRelativeCoords(e);
+                x = coords.x;
+                y = coords.y;
+            } else {
+                x = e.nativeEvent.offsetX;
+                y = e.nativeEvent.offsetY;
+            }
             if (ctx) {
                 ctx.strokeStyle = color;
-                ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+                ctx.lineTo(x, y);
                 ctx.stroke();
             }
         }
@@ -157,6 +187,16 @@ export default function Home() {
                     return;
                 }
                 resp.data.forEach((data: Response) => {
+                    // Always set the result for display
+                    setTimeout(() => {
+                        setResult({
+                            expression: data.expr,
+                            answer: data.result
+                        });
+                        setLoading(false);
+                    }, 1000);
+
+                    // Only update dictOfVars if assign is true
                     if (data.assign === true) {
                         setDictOfVars({
                             ...dictOfVars,
@@ -190,7 +230,7 @@ export default function Home() {
                         setLoading(false);
                     }, 1000);
                 });
-            } catch (err) {
+            } catch {
                 setLoading(false);
                 toast.error('Something went wrong. Please try again!', {
                     description: 'Check your internet connection or try a different problem.',
@@ -264,18 +304,23 @@ export default function Home() {
                         </div>
                     </div>
                 )}
-                <div className="relative w-full flex-1 rounded-xl overflow-hidden shadow border border-gray-700 bg-black max-w-full sm:max-w-2xl mx-auto" style={{ minHeight: '40vh', height: '60vh' }}>
+                <div className="relative w-full flex-1 rounded-xl overflow-hidden shadow border border-gray-700 bg-black" style={{ minHeight: '40vh', height: '60vh' }}>
                     <canvas
                         ref={canvasRef}
                         id="canvas"
                         className="absolute top-0 left-0 w-full h-full rounded-xl"
                         style={{
+                            touchAction: 'none', // Prevent scrolling while drawing
                             cursor: 'url("data:image/svg+xml,%3Csvg width=\'24\' height=\'24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'12\' cy=\'12\' r=\'4\' fill=\'white\'/%3E%3C/svg%3E") 12 12, pointer'
                         }}
                         onMouseDown={startDrawing}
                         onMouseMove={draw}
                         onMouseUp={stopDrawing}
                         onMouseOut={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        onTouchCancel={stopDrawing}
                     />
                     {latexExpression && (
                         <Draggable
